@@ -12,8 +12,8 @@ class MetricPoller
     @refresh_interval = options[:refresh_interval] || 300
     @poll_interval    = options[:poll_interval] || 60
 
-    @refresh_timer = every(@refresh_interval) { refresh }
-    @poll_timer    = every(@poll_interval) { poll }
+    @refresh_timer = every(@refresh_interval) { async.refresh }
+    @poll_timer    = every(@poll_interval) { async.poll }
   end
 
   def refresh
