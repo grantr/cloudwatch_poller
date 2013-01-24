@@ -25,7 +25,7 @@ class MetricNamespace
     end
 
     metric_names.each do |metric_name|
-      @metric_pollers[metric_name] ||= MetricPoller.new_link(@namespace, metric_name)
+      metric_pollers[metric_name] ||= MetricPoller.supervise(@namespace, metric_name)
     end
   end
 
