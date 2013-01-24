@@ -41,7 +41,7 @@ module CloudwatchPoller
       Logger.debug "polling #{metric.dimension_groups.size} dimension groups"
 
       metric.dimension_groups.each do |dimension_group|
-        datapoints = dimension_group.datapoints
+        datapoints = dimension_group.advance
 
         dump(datapoints)
       end
