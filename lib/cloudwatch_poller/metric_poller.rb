@@ -1,3 +1,4 @@
+require 'logger'
 module CloudwatchPoller
   class MetricPoller
     include Celluloid
@@ -6,6 +7,11 @@ module CloudwatchPoller
     attr_accessor :namespace, :metric_name
     attr_reader :poll_interval
     attr_reader :poll_timer
+
+    def self.output
+      # threadsafe logger
+      @output ||= ::Logger.new(STDOUT)
+    end
 
     #TODO optional dimensions
     def initialize(namespace, metric_name, options={})
@@ -34,7 +40,7 @@ module CloudwatchPoller
     def dump(datapoints)
       datapoints.each do |point|
         #TODO thread safety
-        puts format_datapoint(point)
+        self.class.output << format_datapoint(point)
       end
     end
 
@@ -52,7 +58,7 @@ module CloudwatchPoller
         metric: "elb.#{metric_name}", #TODO metric name prefix, translator/underscore
       }.collect do |k, v|
         "#{k}=#{v}"
-      end.join(" ")
+      end.join(" ") + "\n"
     end
 
     def metric
