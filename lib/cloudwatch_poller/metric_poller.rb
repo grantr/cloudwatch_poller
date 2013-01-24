@@ -24,7 +24,7 @@ module CloudwatchPoller
 
     def poll
       Logger.debug "polling"
-      datapoints = metric.statistics(start_time: Time.now - 3600, end_time: Time.now, statistics: ['SampleCount']).datapoints
+      datapoints = metric.statistics(start_time: Time.now - 3600, end_time: Time.now, statistics: ['SampleCount', 'Minimum', 'Maximum', 'Sum']).datapoints
 
       dump(datapoints)
       #TODO poll all metrics
@@ -51,9 +51,9 @@ module CloudwatchPoller
         #dimension: 
         period: 60,
         #value
-        #minimum
-        #maximum
-        #sum
+        minimum: point[:minimum],
+        maximum: point[:maximum],
+        sum: point[:sum],
         sample_count: point[:sample_count],
         metric: "elb.#{metric_name}", #TODO metric name prefix, translator/underscore
       }.collect do |k, v|
