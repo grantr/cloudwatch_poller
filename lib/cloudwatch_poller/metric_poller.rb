@@ -1,4 +1,6 @@
 require 'logger'
+require 'cloudwatch_poller/datapoint_formatter'
+
 module CloudwatchPoller
   class MetricPoller
     include Celluloid
@@ -39,26 +41,12 @@ module CloudwatchPoller
 
     def dump(datapoints)
       datapoints.each do |point|
-        #TODO thread safety
-        self.class.output << format_datapoint(point)
+        self.class.output << formatter.format(point)
       end
     end
 
-    def format_datapoint(point)
-      {
-        unit: point[:unit],
-        timestamp: point[:timestamp].to_i,
-        #dimension: 
-        period: 60,
-        #value
-        minimum: point[:minimum],
-        maximum: point[:maximum],
-        sum: point[:sum],
-        sample_count: point[:sample_count],
-        metric: "elb.#{metric_name}", #TODO metric name prefix, translator/underscore
-      }.collect do |k, v|
-        "#{k}=#{v}"
-      end.join(" ") + "\n"
+    def formatter
+      @formatter ||= DatapointFormatter.new(metric)
     end
 
     def metric
