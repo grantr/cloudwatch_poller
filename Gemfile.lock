@@ -1,3 +1,10 @@
+PATH
+  remote: .
+  specs:
+    cloudwatch_poller (0.0.1)
+      aws-sdk
+      celluloid
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -26,3 +33,4 @@ PLATFORMS
 DEPENDENCIES
   aws-sdk
   celluloid
+  cloudwatch_poller!
