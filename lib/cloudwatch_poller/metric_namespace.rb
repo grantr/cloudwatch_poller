@@ -7,12 +7,11 @@ module CloudwatchPoller
     attr_reader :refresh_interval
     attr_reader :refresh_timer
 
+    # options[:refresh] = false will disable refresh
     def initialize(namespace, options={})
       @namespace = namespace
-      #TODO don't force refresh to happen
-      @refresh_interval = options[:refresh_interval] || 300
-      @refresh_timer = every(@refresh_interval) { async.refresh }
-      async.refresh
+      self.refresh_interval = options[:refresh].nil? ? 300 : options[:refresh]
+      async.refresh unless options[:refresh] == false
     end
 
     def refresh
@@ -32,8 +31,8 @@ module CloudwatchPoller
 
     def refresh_interval=(interval)
       @refresh_interval = interval
-      @refresh_timer.cancel
-      @refresh_timer = every(@refresh_interval) { async.refresh }
+      @refresh_timer.cancel if @refresh_timer
+      @refresh_timer = every(@refresh_interval) { async.refresh } if @refresh_interval
     end
 
     def metric_pollers
