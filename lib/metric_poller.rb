@@ -17,6 +17,9 @@ class MetricPoller
 
   def poll
     Logger.debug "polling"
+    datapoints = metric.statistics(start_time: Time.now - 3600, end_time: Time.now, statistics: ['SampleCount']).datapoints
+
+    puts "datapoints: #{datapoints}"
     #TODO poll all metrics
     # if the time scale is longer than 60 seconds, split that if cloudwatch returns an error
     # 
@@ -25,6 +28,10 @@ class MetricPoller
     # stop the poll timer (let the subpollers handle it)
     # 
     # is the cloudwatch 'too meny metrics' error separate from transient retryable errors?
+  end
+
+  def metric
+    @metric ||= AWS::CloudWatch::Metric.new(@namespace, @metric_name)
   end
 
   def poll_interval=(interval)
