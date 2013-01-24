@@ -1,5 +1,15 @@
 module CloudwatchPoller
-  class Datapoint < Struct.new(:metric, :dimensions, :point)
+  class Datapoint
+
+    attr_accessor :namespace, :name
+    attr_accessor :dimensions, :point
+
+    def initialize(metric, point)
+      @namespace = metric.namespace
+      @name = metric.name
+      @dimensions = metric.dimensions
+      @point = point
+    end
 
     def unit
       point[:unit]

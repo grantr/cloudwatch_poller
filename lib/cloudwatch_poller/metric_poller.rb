@@ -6,7 +6,7 @@ module CloudwatchPoller
     include Celluloid
     include CloudWatch
 
-    attr_accessor :metric
+    attr_accessor :metrics
     attr_reader :poll_interval
     attr_reader :poll_timer
     attr_reader :start_timer
@@ -18,8 +18,8 @@ module CloudwatchPoller
       @output ||= ::Logger.new(STDOUT)
     end
 
-    def initialize(metric, options={})
-      @metric = metric
+    def initialize(options={})
+      @metrics = []
       @options = options
       @start_time = options[:start_time]
       @period = options[:period] || 60
@@ -27,9 +27,9 @@ module CloudwatchPoller
       async.poll unless options[:poll] == false
     end
 
-    def add_dimension_group(dimensions)
+    def add_metric(metric)
       #TODO if we have subpollers, distribute to them
-      metric.add_dimension_group(dimensions, @options)
+      @metrics << metric
     end
 
     #because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
@@ -38,10 +38,10 @@ module CloudwatchPoller
     # maximum data points returned: 1440
     # maximum data points queried: 50850
     def poll
-      Logger.debug "polling #{metric.dimension_groups.size} dimension groups"
+      Logger.debug "polling #{metrics.size} metrics"
 
-      metric.dimension_groups.each do |dimension_group|
-        datapoints = dimension_group.advance
+      metrics.each do |metric|
+        datapoints = metric.advance
 
         dump(datapoints)
       end

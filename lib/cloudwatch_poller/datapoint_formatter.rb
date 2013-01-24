@@ -2,6 +2,7 @@ module CloudwatchPoller
   class DatapointFormatter
     attr_accessor :datapoints
 
+    #TODO maybe this should be part of a datapoint class?
     def initialize(*datapoints)
       @datapoints = datapoints.flatten
     end
@@ -23,25 +24,25 @@ module CloudwatchPoller
       {
         unit: point.unit,
         timestamp: point.timestamp.to_i,
-        dimension: formatted_dimension(point.dimensions),
+        dimension: formatted_dimension(point),
         period: 60,
         #value
         minimum: point.minimum,
         maximum: point.maximum,
         sum: point.sum,
         sample_count: point.sample_count,
-        metric: formatted_metric_name(point.metric)
+        metric: formatted_metric_name(point)
       }
     end
 
-    def formatted_dimension(dimensions)
-      dimensions.sort_by { |d| d[:name] }.collect do |d|
+    def formatted_dimension(point)
+      point.dimensions.sort_by { |d| d[:name] }.collect do |d|
         escape(d[:value])
       end.join(".").downcase
     end
 
-    def formatted_metric_name(metric)
-      "#{escape(metric.namespace)}.#{escape(metric.name)}".downcase
+    def formatted_metric_name(point)
+      "#{escape(point.namespace)}.#{escape(point.name)}".downcase
     end
 
     def escape(string)

@@ -21,12 +21,12 @@ module CloudwatchPoller
 
       query.each do |metric|
         #TODO might be better to link and trap_exit
-        poller = metric_pollers[metric.metric_name] ||= MetricPoller.supervise(Metric.new(@namespace, metric.metric_name), @options)
+        poller = metric_pollers[metric.metric_name] ||= MetricPoller.supervise(@options)
 
         # get actor from supervisor
         poller = poller.actors.first
 
-        poller.add_dimension_group(metric.dimensions)
+        poller.add_metric(Metric.new(@namespace, metric.metric_name, metric.dimensions, @options))
       end
     end
 
