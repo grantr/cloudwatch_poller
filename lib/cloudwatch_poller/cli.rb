@@ -4,12 +4,13 @@ module CloudwatchPoller
   class CLI < Thor
     desc :start, "Start the poller in the foreground"
     def start
-      #TODO one per namespace
-      namespaces = ["AWS/ELB"].collect do |namespace|
-        MetricNamespace.supervise(namespace)
+      app = Celluloid::SupervisionGroup.new do |group|
+        #TODO configurable namespaces
+        ["AWS/ELB"].collect do |namespace|
+          group.supervise MetricNamespace, namespace
+        end
       end
-      
-      namespaces.each { |n| Celluloid::Actor.join(n) }
+      Celluloid::Actor.join(app)
     end
   end
 end
