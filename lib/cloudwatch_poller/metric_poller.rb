@@ -9,6 +9,9 @@ module CloudwatchPoller
     attr_accessor :metric
     attr_reader :poll_interval
     attr_reader :poll_timer
+    attr_reader :start_timer
+
+    attr_reader :start_time
 
     def self.output
       # threadsafe logger
@@ -16,14 +19,17 @@ module CloudwatchPoller
     end
 
     def initialize(metric, options={})
-      @metric        = metric
-      self.poll_interval = options[:poll].nil? ? 60 : options[:poll]
+      @metric = metric
+      @options = options
+      @start_time = options[:start_time]
+      @period = options[:period] || 60
+      self.poll_interval = options[:poll].nil? ? @period : options[:poll]
       async.poll unless options[:poll] == false
     end
 
     def add_dimension_group(dimensions)
       #TODO if we have subpollers, distribute to them
-      metric.add_dimension_group(dimensions)
+      metric.add_dimension_group(dimensions, @options)
     end
 
     #because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
@@ -32,10 +38,10 @@ module CloudwatchPoller
     # maximum data points returned: 1440
     # maximum data points queried: 50850
     def poll
-      Logger.debug "polling"
+      Logger.debug "polling #{metric.dimension_groups.size} dimension groups"
 
       metric.dimension_groups.each do |dimension_group|
-        datapoints = dimension_group.datapoints(Time.now - 3600, Time.now, ['SampleCount', 'Minimum', 'Maximum', 'Sum'])
+        datapoints = dimension_group.datapoints
 
         dump(datapoints)
       end

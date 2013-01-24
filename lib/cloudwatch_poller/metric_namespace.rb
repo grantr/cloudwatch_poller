@@ -10,6 +10,7 @@ module CloudwatchPoller
     # options[:refresh] = false will disable refresh
     def initialize(namespace, options={})
       @namespace = namespace
+      @options = options
       self.refresh_interval = options[:refresh].nil? ? 300 : options[:refresh]
       async.refresh unless options[:refresh] == false
     end
@@ -20,7 +21,10 @@ module CloudwatchPoller
 
       query.each do |metric|
         #TODO might be better to link and trap_exit
-        poller = metric_pollers[metric.metric_name] ||= MetricPoller.supervise(Metric.new(@namespace, metric.metric_name))
+        poller = metric_pollers[metric.metric_name] ||= MetricPoller.supervise(Metric.new(@namespace, metric.metric_name), @options)
+
+        # get actor from supervisor
+        poller = poller.actors.first
 
         poller.add_dimension_group(metric.dimensions)
       end
@@ -30,6 +34,12 @@ module CloudwatchPoller
       @refresh_interval = interval
       @refresh_timer.cancel if @refresh_timer
       @refresh_timer = every(@refresh_interval) { async.refresh } if @refresh_interval
+    end
+
+    def poll_interval=(interval)
+      metric_pollers.each do |name, poller|
+        poller.poll_interval = interval
+      end
     end
 
     def metric_pollers

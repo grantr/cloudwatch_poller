@@ -9,8 +9,8 @@ module CloudwatchPoller
       @dimension_groups = []
     end
 
-    def add_dimension_group(dimensions)
-      @dimension_groups << DimensionGroup.new(self, dimensions)
+    def add_dimension_group(dimensions, options={})
+      @dimension_groups << DimensionGroup.new(self, dimensions, options)
     end
 
     # split the metric into multiple groups by dimension
