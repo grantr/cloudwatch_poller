@@ -6,7 +6,7 @@ module CloudwatchPoller
     include Celluloid
     include CloudWatch
 
-    attr_accessor :namespace, :metric_name
+    attr_accessor :metric
     attr_reader :poll_interval
     attr_reader :poll_timer
 
@@ -15,23 +15,26 @@ module CloudwatchPoller
       @output ||= ::Logger.new(STDOUT)
     end
 
-    #TODO optional dimensions
-    def initialize(namespace, metric_name, options={})
-      @namespace     = namespace
-      @metric_name   = metric_name
-      @poll_interval = options[:poll_interval] || 60
-      @poll_timer    = every(@poll_interval) { async.poll }
-      async.poll
+    def initialize(metric, options={})
+      @metric        = metric
+      self.poll_interval = options[:poll].nil? ? 60 : options[:poll]
+      async.poll unless options[:poll] == false
     end
 
+    #TODO because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
+    # we can still use the recursion thing by specifying a maximum number of dimensions per poller.
+    #
+    # maximum data points returned: 1440
+    # maximum data points queried: 50850
     def poll
       Logger.debug "polling"
-      datapoints = metric.statistics(start_time: Time.now - 3600, end_time: Time.now, statistics: ['SampleCount', 'Minimum', 'Maximum', 'Sum']).datapoints
 
-      dump(datapoints)
-      #TODO poll all metrics
-      # if the time scale is longer than 60 seconds, split that if cloudwatch returns an error
-      # 
+      metric.dimension_groups.each do |dimension_group|
+        datapoints = dimension_group.datapoints(Time.now - 3600, Time.now, ['SampleCount', 'Minimum', 'Maximum', 'Sum'])
+
+        dump(datapoints)
+      end
+
       # if cloudwatch returns a 'too many metrics' error, split metrics into multiple arrays by dimension
       # spin up a metric poller for each dimension slice
       # stop the poll timer (let the subpollers handle it)
@@ -40,23 +43,13 @@ module CloudwatchPoller
     end
 
     def dump(datapoints)
-      datapoints.each do |point|
-        self.class.output << formatter.format(point)
-      end
-    end
-
-    def formatter
-      @formatter ||= DatapointFormatter.new(metric)
-    end
-
-    def metric
-      @metric ||= AWS::CloudWatch::Metric.new(@namespace, @metric_name)
+      self.class.output << DatapointFormatter.new(datapoints).format
     end
 
     def poll_interval=(interval)
       @poll_interval = interval
-      @poll_timer.cancel
-      @poll_timer = every(@poll_interval) { async.poll }
+      @poll_timer.cancel if @poll_timer
+      @poll_timer = every(@poll_interval) { async.poll } if @poll_interval
     end
   end
 end

@@ -19,13 +19,17 @@ module CloudwatchPoller
       query = cw.metrics.with_namespace(@namespace)
 
       # metric collection doesn't define #all or #collect
-      metric_names = Set.new
+      metrics = {}
       query.each do |metric|
-        metric_names << metric.metric_name
+        metrics[metric.metric_name] ||= Metric.new(@namespace, metric.metric_name)
+
+        #TODO move metric dimension gathering into poller
+        metrics[metric.metric_name].add_dimension_group(metric.dimensions)
       end
 
-      metric_names.each do |metric_name|
-        metric_pollers[metric_name] ||= MetricPoller.supervise(@namespace, metric_name)
+      metrics.each do |metric_name, metric|
+        #TODO might be better to link and trap_exit
+        metric_pollers[metric_name] ||= MetricPoller.supervise(metric)
       end
     end
 
