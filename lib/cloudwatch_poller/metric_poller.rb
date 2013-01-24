@@ -21,7 +21,12 @@ module CloudwatchPoller
       async.poll unless options[:poll] == false
     end
 
-    #TODO because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
+    def add_dimension_group(dimensions)
+      #TODO if we have subpollers, distribute to them
+      metric.add_dimension_group(dimensions)
+    end
+
+    #because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
     # we can still use the recursion thing by specifying a maximum number of dimensions per poller.
     #
     # maximum data points returned: 1440
