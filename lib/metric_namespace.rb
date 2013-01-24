@@ -11,6 +11,7 @@ class MetricNamespace
     #TODO don't force refresh to happen
     @refresh_interval = options[:refresh_interval] || 300
     @refresh_timer = every(@refresh_interval) { async.refresh }
+    async.refresh
   end
 
   def refresh

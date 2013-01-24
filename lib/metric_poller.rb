@@ -12,6 +12,7 @@ class MetricPoller
     @metric_name   = metric_name
     @poll_interval = options[:poll_interval] || 60
     @poll_timer    = every(@poll_interval) { async.poll }
+    async.poll
   end
 
   def poll
