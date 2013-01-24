@@ -1,6 +1,8 @@
 require 'aws-sdk'
 require 'celluloid'
 
+require File.expand_path('../cloud_watch', __FILE__)
+require File.expand_path('../metric_namespace', __FILE__)
 require File.expand_path('../metric_poller', __FILE__)
 
 AWS.config(
