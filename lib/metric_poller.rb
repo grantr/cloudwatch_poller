@@ -19,7 +19,7 @@ class MetricPoller
     Logger.debug "polling"
     datapoints = metric.statistics(start_time: Time.now - 3600, end_time: Time.now, statistics: ['SampleCount']).datapoints
 
-    puts "datapoints: #{datapoints}"
+    dump(datapoints)
     #TODO poll all metrics
     # if the time scale is longer than 60 seconds, split that if cloudwatch returns an error
     # 
@@ -28,6 +28,29 @@ class MetricPoller
     # stop the poll timer (let the subpollers handle it)
     # 
     # is the cloudwatch 'too meny metrics' error separate from transient retryable errors?
+  end
+
+  def dump(datapoints)
+    datapoints.each do |point|
+      puts format_datapoint(point)
+    end
+  end
+
+  def format_datapoint(point)
+    {
+      unit: point[:unit],
+      timestamp: point[:timestamp].to_i,
+      #dimension: 
+      period: 60,
+      #value
+      #minimum
+      #maximum
+      #sum
+      #sample_count
+      #metric
+    }.collect do |k, v|
+      "#{k}=#{v}"
+    end.join(" ")
   end
 
   def metric
