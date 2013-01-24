@@ -6,8 +6,8 @@ class MetricPoller
   attr_reader :poll_interval
   attr_reader :poll_timer
 
-  #TODO optional dimensions, etc
-  def initialize(namespace=nil, metric_name=nil, options={})
+  #TODO optional dimensions
+  def initialize(namespace, metric_name, options={})
     @namespace     = namespace
     @metric_name   = metric_name
     @poll_interval = options[:poll_interval] || 60
