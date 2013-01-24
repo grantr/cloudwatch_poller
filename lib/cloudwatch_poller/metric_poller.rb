@@ -27,11 +27,12 @@ class MetricPoller
     # spin up a metric poller for each dimension slice
     # stop the poll timer (let the subpollers handle it)
     # 
-    # is the cloudwatch 'too meny metrics' error separate from transient retryable errors?
+    # is the cloudwatch 'too many metrics' error separate from transient retryable errors?
   end
 
   def dump(datapoints)
     datapoints.each do |point|
+      #TODO thread safety
       puts format_datapoint(point)
     end
   end
@@ -46,8 +47,8 @@ class MetricPoller
       #minimum
       #maximum
       #sum
-      #sample_count
-      #metric
+      sample_count: point[:sample_count],
+      metric: "elb.#{metric_name}", #TODO metric name prefix, translator/underscore
     }.collect do |k, v|
       "#{k}=#{v}"
     end.join(" ")
