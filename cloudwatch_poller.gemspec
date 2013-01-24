@@ -19,4 +19,5 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency "aws-sdk"
   gem.add_runtime_dependency "celluloid"
+  gem.add_runtime_dependency "thor"
 end

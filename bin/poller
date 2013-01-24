@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require 'cloudwatch_poller'
+require 'cloudwatch_poller/cli'
+
+CloudwatchPoller::CLI.start(ARGV)
