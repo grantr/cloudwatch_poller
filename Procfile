@@ -1,1 +1,1 @@
-web: bin/web
+poller: bin/poller
