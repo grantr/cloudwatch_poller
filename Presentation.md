@@ -259,7 +259,7 @@ This is not implemented but with the correct exceptions and rescues it would
 not be hard to add. Time ranges and polling intervals are already variable.
 
 # Shrinking
-Shrinking is useful because it reduces CloudWatch concurrency if load is low.
+Shrinking is useful because it reduces CloudWatch traffic if load is low.
 
 Splitting pollers is relatively easy, but shrinking is more difficult because
 it needs to be recursive.
@@ -280,6 +280,12 @@ and be restarted.
 # Linking
 Currently all actors are linked, so any actor that crashes causes the entire 
 tree to crash with it. This is probably excessive.
+
+# Celluloid::IO
+A Celluloid::IO-aware client would give each actor its own reactor loop,
+allowing multiple in-flight requests per actor.
+
+There isn't a Celluloid::IO-aware http client yet.
 
 # JRuby
 MRI is not parallel, but it fakes it reasonably well.
