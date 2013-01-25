@@ -62,27 +62,7 @@ What if there are 100 ELBs? 1000? 10000?
   - Easier to reason about and use effectively than threads
   - Used in Erlang to create reliable concurrent systems
 
-# Celluloid
-  - An actor library written in Ruby
-  - Written by Tony Arcieri, author of Cool.io, Reia, nio4r
-
 # Celluloid Hello World
-    ::: ruby
-    class HelloActor
-      include Celluloid
-
-      def hello(s)
-        puts "hello #{s}!"
-      end
-    end
-
-    >> actor = HelloActor.new
-    => #<Celluloid::Actor(HelloActor:0x10a1120)>
-    >> actor.hello("heroku")
-    hello heroku!
-    => nil
-
-# Celluloid Lazy Hello
     ::: ruby
     class LazyActor
       include Celluloid
@@ -120,27 +100,6 @@ What if there are 100 ELBs? 1000? 10000?
     Also, hello heroku
     Also, hello heroku
 
-
-# Why use Celluloid?
-  - It's Just Ruby
-  - Easier than threads
-  - No callbacks
-
-# Why not use Celluloid?
-  - It's Not Erlang
-  - Immature
-    - Supervisors are kind of crappy (no supervision trees or restart
-      behaviors)
-    - Needs a kill -9 sometimes at shutdown
-    - Lots of Ruby libraries are not thread-safe
-  - MRI is not that good at threads
-    - GVL
-    - "Matz is not a threading guy"
-
-# But...
-  - It's moving fast and the community is growing quickly
-  - JRuby and Rubinius don't have GVLs
-
 # Namespaces
 ![](images/metric_namespace.png)
 
@@ -157,8 +116,6 @@ What if there are 100 ELBs? 1000? 10000?
   - Not a reactor. Async requests are ultimately still synchronous.
   - The earlier example cheated because sleep is overridden in Celluloid to
     immediately yield to the scheduler and resume after a timeout.
-  - Celluloid::IO adds reactor loops to actors, but libraries must be aware of
-    it.
 
 # Polling
     ::: ruby
@@ -198,22 +155,48 @@ What if there are 100 ELBs? 1000? 10000?
 # Sub-subpollers
 ![](images/subpollerpollers.png)
 
+# Sharding Metrics
+If a single process just isn't keeping up, sharding could help scale.
+
+Use the total number of processes to split up metrics. If there are
+4 processes, the 1st process takes metric 1, 5, and 9, the 2nd process takes
+2, 6, and 10, and so on.
+
+This requires restarting all processes when the scale changes, or if scale
+changes were detectable then the Namespace actors could just crash themselves
+and be restarted.
+
+# Handling Request Size Limits
+Because we are making one request per Dimension vector, we can't split
+requests by dimension, but we can split requests by time slice. 
+
+Make multiple requests per period and join the results.
+
+# Handling Throttling
+If we are throttled by CloudWatch, we need to get the same quantity of data
+with fewer requests.
+
+Increase the polling interval and get multiple time periods per request (up to
+the requests size limit).
+
+# Shrinking
+Shrinking is useful because it reduces CloudWatch traffic if load is low.
+
+Splitting pollers is relatively easy, but shrinking is more difficult because
+it needs to be recursive.
+
+Pollers could detect whether their children are leaf nodes and only shrink in that case. This could be triggered by summing the polling times of children and comparing them to a minimum time.
+
 # Stateful or Stateless
   - Problem is inherently stateful, so in this case stateless means no
     persistence
   - Stateful services are harder to deploy and manage (but Heroku makes it easier)
   - Can we remain stateless without losing data?
 
-
 # Why Stateless
   - Easier to write and scale
   - No coordination/locks
   - Scaling easier to control and tune
-
-# Why not Stateful
-  - Requires locks
-  - Redis atomic getset or queues (but queues require coordinators)
-  - Contention/Thundering Herd
 
 # Stateless Issues and Solutions
 ### Crash or Restart
@@ -223,12 +206,12 @@ Assume the position marker was up to date. On start, get the
 previous minute of data first. Most of the time, the process will restart
 in less than 60 seconds and no data will be lost (but some will be processed
 twice).
-### Singleton process
+### Singletons
 If the machine hosting the process dies, there is no other process to take
 over.
 
 Automatically restart the process somewhere else. Since there is no state, it can
-run anywhere. Support manual backfill if process is down for a long time.
+run anywhere. Use manual backfill if process is down for a long time.
 
 # Demo
 
@@ -240,7 +223,7 @@ CloudWatch.
 Celluloid occasionally got stuck if too many actors crashed at once, or it
 received a SIGINT (Control-C) at the wrong time.
 
-# Potential Improvements
+# Potential Improvements/Issues
   - Tests
   - Config
   - Backfills
@@ -249,37 +232,6 @@ received a SIGINT (Control-C) at the wrong time.
 # Metric Removal
 Currently, metrics are only added. If an ELB is terminated, the process would
 still poll for it even though it would never get any data.
-
-# Time Range Batching
-In the case of backfills, throttling, or falling behind, time ranges
-should be increased and, in the case of throttling, polling intervals should increase
-as well.
-
-This is not implemented but with the correct exceptions and rescues it would
-not be hard to add. Time ranges and polling intervals are already variable.
-
-# Shrinking
-Shrinking is useful because it reduces CloudWatch traffic if load is low.
-
-Splitting pollers is relatively easy, but shrinking is more difficult because
-it needs to be recursive.
-
-Pollers could detect whether their children are leaf nodes and only shrink in that case. This could be triggered by summing the polling times of children and comparing them to a minimum time.
-
-# Sharding
-If a single process just isn't keeping up, sharding could help scale.
-
-You could use the total number of processes to split up metrics. If there are
-4 processes, the 1st process takes metric 1, 5, and 9, the 2nd process takes
-2, 6, and 10, and so on.
-
-This requires restarting all processes when the scale changes, or if scale
-changes were detectable then the Namespace actors could just crash themselves
-and be restarted.
-
-# Linking
-Currently all actors are linked, so any actor that crashes causes the entire 
-tree to crash with it. This is probably excessive.
 
 # Celluloid::IO
 A Celluloid::IO-aware client would give each actor its own reactor loop,
