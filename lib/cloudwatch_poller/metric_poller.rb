@@ -29,8 +29,6 @@ module CloudwatchPoller
       @period = options[:period] || 60
       @growth_factor = options[:growth_factor] || 2
       @split_factor = options[:split_factor] || 0.5
-      self.poll_interval = options[:poll].nil? ? @period : options[:poll]
-      async.poll unless options[:poll] == false
     end
 
     def add_metric(metric)
@@ -40,6 +38,17 @@ module CloudwatchPoller
       else
         @metrics << metric
       end
+    end
+
+    def start(interval=nil)
+      unless running?
+        async.poll
+        self.poll_interval = (interval || @options[:poll] || @period)
+      end
+    end
+
+    def running?
+      !@poll_timer.nil?
     end
 
     #because datapoints need dimension information, we cannot poll multiple metrics at once. we must poll every dimension group individually.
@@ -87,6 +96,8 @@ module CloudwatchPoller
             subgroup.each { |group| poller.add_metric(group) }
           end
         end
+
+        @subpollers.each(&:start)
 
         @metrics.clear
       else

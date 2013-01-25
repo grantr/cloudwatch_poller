@@ -28,6 +28,8 @@ module CloudwatchPoller
 
         poller.add_metric(Metric.new(@namespace, metric.metric_name, metric.dimensions, @options))
       end
+
+      metric_pollers.each { |name, poller| poller.actors.first.start }
     end
 
     def refresh_interval=(interval)
