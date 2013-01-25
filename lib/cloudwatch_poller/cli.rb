@@ -1,5 +1,7 @@
 require 'thor'
 
+STDOUT.sync = true
+
 module CloudwatchPoller
   class CLI < Thor
     desc :start, "Start the poller in the foreground"
