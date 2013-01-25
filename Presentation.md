@@ -64,7 +64,7 @@ What if there are 100 ELBs? 1000? 10000?
 
 # Celluloid Hello World
     ::: ruby
-    class LazyActor
+    class HelloActor
       include Celluloid
 
       def hello(s)
@@ -72,11 +72,15 @@ What if there are 100 ELBs? 1000? 10000?
         sleep 4
         puts "Also, hello #{s}"
       end
+
+      def pester(s)
+        every(5) { hello(s) }
+      end
     end
 
 # Celluloid Sync Call
     ::: ruby
-    >> 4.times { LazyActor.new.hello("heroku") }
+    >> 4.times { HelloActor.new.hello("heroku") }
     The time is 2013-01-24T21:44:23-08:00
     Also, hello heroku
     The time is 2013-01-24T21:44:27-08:00
@@ -89,7 +93,7 @@ What if there are 100 ELBs? 1000? 10000?
 
 # Celluloid Async Call
     ::: ruby
-    >> 4.times { LazyActor.new.async.hello("heroku") }
+    >> 4.times { HelloActor.new.async.hello("heroku") }
     The time is 2013-01-24T21:45:00-08:00
     The time is 2013-01-24T21:45:00-08:00
     The time is 2013-01-24T21:45:00-08:00
