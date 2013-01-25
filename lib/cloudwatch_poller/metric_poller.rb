@@ -28,7 +28,10 @@ module CloudwatchPoller
       @start_time = options[:start_time]
       @period = options[:period] || 60
       @growth_factor = options[:growth_factor] || 2
-      @split_factor = options[:split_factor] || 0.5
+
+      # This is an unusually small split_factor just for the demo. 
+      # I would set it at more like 0.5 in production.
+      @split_factor = options[:split_factor] || 0.3
     end
 
     def add_metric(metric)
