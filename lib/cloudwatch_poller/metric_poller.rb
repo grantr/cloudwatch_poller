@@ -40,10 +40,10 @@ module CloudwatchPoller
       end
     end
 
-    def start(interval=nil)
+    def start(run_immediately=true)
       unless running?
-        async.poll
-        self.poll_interval = (interval || @options[:poll] || @period)
+        async.poll if run_immediately
+        self.poll_interval = (@options[:poll] || @period)
       end
     end
 
@@ -97,7 +97,8 @@ module CloudwatchPoller
           end
         end
 
-        @subpollers.each(&:start)
+        # start pollers, but don't start polling until the next cycle
+        @subpollers.each { |p| p.start(false) }
 
         @metrics.clear
       else
