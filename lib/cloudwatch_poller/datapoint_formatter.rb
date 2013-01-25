@@ -1,4 +1,5 @@
 module CloudwatchPoller
+  #TODO define subclasses of this for custom formatting needs
   class DatapointFormatter
     attr_accessor :datapoints
 
