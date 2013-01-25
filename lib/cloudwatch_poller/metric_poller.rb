@@ -1,4 +1,5 @@
 require 'logger'
+require 'benchmark'
 require 'cloudwatch_poller/datapoint_formatter'
 
 module CloudwatchPoller
@@ -23,38 +24,72 @@ module CloudwatchPoller
       @options = options
       @start_time = options[:start_time]
       @period = options[:period] || 60
+      @growth_factor = options[:growth_factor] || 2
+      @split_factor = options[:split_factor] || 0.5
       self.poll_interval = options[:poll].nil? ? @period : options[:poll]
       async.poll unless options[:poll] == false
     end
 
     def add_metric(metric)
-      #TODO if we have subpollers, distribute to them
-      @metrics << metric
+      if @split
+        #if we have subpollers, distribute to them
+        @subpollers.sample.add_metric(metric)
+      else
+        @metrics << metric
+      end
     end
 
-    #because datapoints need dimension information, we cannot poll multiple dimensions at once. we must poll every dimension group individually.
-    # we can still use the recursion thing by specifying a maximum number of dimensions per poller.
-    #
-    # maximum data points returned: 1440
-    # maximum data points queried: 50850
+    #because datapoints need dimension information, we cannot poll multiple metrics at once. we must poll every dimension group individually.
     def poll
       Logger.debug "polling #{metrics.size} metrics"
 
-      metrics.each do |metric|
-        datapoints = metric.advance
+      elapsed = Benchmark.realtime do
+        metrics.each do |metric|
+          datapoints = metric.advance
 
-        dump(datapoints)
+          dump(datapoints)
+        end
       end
 
-      # if cloudwatch returns a 'too many metrics' error, split metrics into multiple arrays by dimension
-      # spin up a metric poller for each dimension slice
-      # stop the poll timer (let the subpollers handle it)
-      # 
-      # is the cloudwatch 'too many metrics' error separate from transient retryable errors?
+      Logger.debug "polling took #{elapsed} seconds"
+
+      # if elapsed gets too close to the period, split into multiple pollers
+      #TODO if polling takes too little time, shrink
+      # shrinking is harder because it must be recursive
+      if elapsed > (period * @split_factor)
+        Logger.debug("polling took longer than #{period * @split_factor} seconds, splitting")
+        split
+      end
     end
 
     def dump(datapoints)
       self.class.output << DatapointFormatter.new(datapoints).format
+    end
+
+    def split
+      if @split
+        Logger.debug("Splitting into #{@growth_factor} pollers")
+
+        # stop the poll timer
+        @poll_timer.cancel
+
+        # split metrics into N subgroups
+        metric_subgroups = @growth_factor.times.collect { [] }
+        @metrics.each_with_index { |e, i| metric_subgroups[i % @growth_factor] << e }
+
+        # assign each subgroup to a subpoller
+        @subpollers = metric_subgroups.collect do |subgroup|
+          self.class.new_link(@options).tap do |poller|
+            subgroup.each { |group| poller.add_metric(group) }
+          end
+        end
+
+        @metrics.clear
+      else
+        Logger.debug("Tried to split, but already did")
+        @split = true
+      end
+
     end
 
     def poll_interval=(interval)
