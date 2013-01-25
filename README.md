@@ -1,6 +1,9 @@
 # CloudwatchPoller
 
-TODO: Write a gem description
+This is a celluloid process that polls cloudwatch metrics and logs them to
+STDOUT for consumption by other systems.
+
+Written for a hack week, so it's more of a tech demo than a useful product. 
 
 ## Installation
 
