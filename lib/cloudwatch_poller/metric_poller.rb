@@ -8,6 +8,7 @@ module CloudwatchPoller
     include CloudWatch
 
     attr_accessor :metrics
+    attr_reader :options
     attr_reader :poll_interval
     attr_reader :poll_timer
     attr_reader :start_timer
