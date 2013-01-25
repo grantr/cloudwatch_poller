@@ -70,8 +70,9 @@ module CloudwatchPoller
     end
 
     def split
-      if @split
+      unless @split
         Logger.debug("Splitting into #{@growth_factor} pollers")
+        @split = true
 
         # stop the poll timer
         @poll_timer.cancel
