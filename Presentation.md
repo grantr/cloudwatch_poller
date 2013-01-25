@@ -159,17 +159,6 @@ What if there are 100 ELBs? 1000? 10000?
 # Sub-subpollers
 ![](images/subpollerpollers.png)
 
-# Sharding Metrics
-If a single process just isn't keeping up, sharding could help scale.
-
-Use the total number of processes to split up metrics. If there are
-4 processes, the 1st process takes metric 1, 5, and 9, the 2nd process takes
-2, 6, and 10, and so on.
-
-This requires restarting all processes when the scale changes, or if scale
-changes were detectable then the Namespace actors could just crash themselves
-and be restarted.
-
 # Handling Request Size Limits
 Because we are making one request per Dimension vector, we can't split
 requests by dimension, but we can split requests by time slice. 
@@ -183,8 +172,19 @@ with fewer requests.
 Increase the polling interval and get multiple time periods per request (up to
 the requests size limit).
 
+# Sharding Metrics
+If a single process just isn't keeping up, sharding could help scale.
+
+Use the total number of processes to split up metrics. If there are
+4 processes, the 1st process takes metric 1, 5, and 9, the 2nd process takes
+2, 6, and 10, and so on.
+
+This requires restarting all processes when the scale changes, or if scale
+changes were detectable then the Namespace actors could just crash themselves
+and be restarted.
+
 # Shrinking
-Shrinking is useful because it reduces CloudWatch traffic if load is low.
+If load is low, we want to reduce concurrency.
 
 Splitting pollers is relatively easy, but shrinking is more difficult because
 it needs to be recursive.
