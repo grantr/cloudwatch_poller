@@ -1,5 +1,7 @@
 source :rubygems
 
 gemspec
-gem 'celluloid'
-gem 'aws-sdk'
+
+group :presentation do
+  gem 'deckrb'
+end
