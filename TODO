@@ -1,0 +1,58 @@
+data in cloudwatch doesn't appear for up to 5 minutes according to
+http://benctechnicalblog.blogspot.com/2011/05/ruby-cloudwatch-mrtg-interface.html
+(suggests waiting 15 minutes)
+
+https://groups.google.com/forum/?fromgroups=#!topic/ruby-fog/YnL2lZZ6_yY
+reports 20 minute waiting period before metrics are returned
+
+need to list metrics
+start an actor for each metric
+periodically poll
+
+namespace: AWS/ELB
+
+metrics = cw.metrics.with_namespace("AWS/ELB").each { }
+
+split by metric name
+periodically poll all metrics (timers)
+
+each metric needs to store the last time it was polled - it can't use Time.now
+metrics should 'catch up' if they are behind when the timer is called
+metrics should be batched into statistics requests
+
+do we need persistent state? hopefully not
+backfilling data is interesting but not a requirement
+one easy way to do this is to allow starting with a 'start time'
+this start time would be manually entered based on what humans decided to backfill to
+
+for some metrics, some statistics don't make sense. This should be configurable
+
+another option is to have a namespace manager that polls metrics in a namespace and decides what metric names are there
+this manager starts up a metricpoller for each namespace/metric_name pair
+
+metricpoller no longer needs to refresh, it just needs to poll
+if metricpoller sees an error, it can start up new metricpollers for specific dimensions
+
+does stdout need a mutex?
+
+force stdout to be sync
+heroku apps are restarted once a day. persistent state might be necessary
+restart time is variable, could be as little as 10 seconds, could be more
+apps must shutdown in 10 seconds or they are kill'ed
+
+presentation:
+Timing
+20-30 minutes
+
+50 slides + 5 minute demo + 5 minute QA
+10-20 minutes for 50 slides: 12-24 seconds per slide
+
+slides are hosted on heroku
+demo is also on heroku: run a single poller process and tail the logs
+
+rate exceeded exception:
+2013-01-25T20:35:33+00:00 app[poller.1]: AWS::CloudWatch::Errors::Throttling: Rate exceeded
+
+less time on celluloid, more on design
+move potential questions to where they would be asked
+link slides to francis
