@@ -19,15 +19,25 @@ module CloudwatchPoller
     end
 
     def datapoints(options={})
-      #TODO check for dimensions > 10
-      #TODO if the time scale is longer than period, split that if cloudwatch returns an error
+      #TODO check for dimensions > 10 (cloudwatch max)
 
-      datapoints = cw_metric.statistics(
-        start_time: options[:start_time] || next_time - period, 
-        end_time: options[:end_time] || next_time, 
-        statistics: options[:statistics] || ['Sum', 'SampleCount', 'Minimum', 'Maximum'], 
-        dimensions: dimensions
-      ).datapoints
+      begin
+        datapoints = cw_metric.statistics(
+          start_time: options[:start_time] || next_time - period,
+          end_time: options[:end_time] || next_time,
+          statistics: options[:statistics] || ['Sum', 'SampleCount', 'Minimum', 'Maximum'],
+          dimensions: dimensions
+        ).datapoints
+      #TODO handle more errors
+      rescue AWS::CloudWatch::Errors::InvalidParameterCombination => e
+        if e.message =~ /exceeds the limit/
+          #TODO if the time scale is longer than period, try again with a shorter time
+          # can't decrease the number of dimensions because this is already an atomic metric
+          raise e
+        else
+          raise e
+        end
+      end
 
       datapoints.collect { |point| Datapoint.new(self, point) }
     end
