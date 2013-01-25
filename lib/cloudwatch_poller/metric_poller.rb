@@ -15,6 +15,8 @@ module CloudwatchPoller
 
     attr_reader :start_time
 
+    attr_accessor :period, :split_factor, :growth_factor
+
     def self.output
       # threadsafe logger
       @output ||= ::Logger.new(STDOUT)
@@ -57,8 +59,8 @@ module CloudwatchPoller
       # if elapsed gets too close to the period, split into multiple pollers
       #TODO if polling takes too little time, shrink
       # shrinking is harder because it must be recursive
-      if elapsed > (period * @split_factor)
-        Logger.debug("polling took longer than #{period * @split_factor} seconds, splitting")
+      if elapsed > (@period * @split_factor)
+        Logger.debug("polling took longer than #{@period * @split_factor} seconds, splitting")
         split
       end
     end
