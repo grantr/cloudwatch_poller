@@ -14,7 +14,7 @@ module CloudwatchPoller
 
     def advance(options={})
       datapoints(options).tap do
-        @next_time = end_time + period
+        @next_time = (options[:end_time] || next_time) + period
       end
     end
 
