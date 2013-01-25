@@ -264,7 +264,7 @@ Shrinking is useful because it reduces CloudWatch traffic if load is low.
 Splitting pollers is relatively easy, but shrinking is more difficult because
 it needs to be recursive.
 
-Pollers could detect whether their children are leaf nodes and only shrink in that case. This could be triggered by especially fast polling times.
+Pollers could detect whether their children are leaf nodes and only shrink in that case. This could be triggered by summing the polling times of children and comparing them to a minimum time.
 
 # Sharding
 If a single process just isn't keeping up, sharding could help scale.
